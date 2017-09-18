@@ -1,4 +1,4 @@
-module Block5
+module Folds
     ( someFunc
     ) where
 

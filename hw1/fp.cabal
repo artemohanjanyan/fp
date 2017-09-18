@@ -15,11 +15,11 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Block1
-                     , Block2
-                     , Block3
-                     , Block4
-                     , Block5
+  exposed-modules:     Simple
+                     , Patterns
+                     , Adts
+                     , Folds
+                     , Monoids
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , random

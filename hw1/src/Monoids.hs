@@ -1,4 +1,4 @@
-module Block3
+module Monoids
     ( someFunc
     ) where
 

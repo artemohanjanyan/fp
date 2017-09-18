@@ -1,4 +1,4 @@
-module Block1
+module Simple
     ( order3
     , highestBit
     , highestBitHard

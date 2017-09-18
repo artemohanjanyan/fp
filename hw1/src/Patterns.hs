@@ -1,4 +1,4 @@
-module Block2
+module Patterns
     ( randomIntList
     , removeAt
     , removeAtHard
