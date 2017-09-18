@@ -1,12 +1,32 @@
 module Adts
-    ( Day(..)
+    ( Day (..)
     , nextDay
     , afterDays
     , isWeekend
     , daysToParty
 
-    , Nat(..)
+    , Creature (..)
+    , Knight (..)
+    , Monster (..)
+    , fight
+
+    , Vector (..)
+    , euclidNorm
+    , add
+    , scalar
+    , dist
+    , vectorProduct
+
+    , Nat (..)
+
+    , module TreePrinters
+    , treeElem
+    , treeInsert
+    , fromList
     ) where
+
+import TreePrinters (Tree (..), directoryPrint, verticalPrint)
+import Patterns (mergeSort)
 
 import GHC.Real (Ratio((:%)))
 
@@ -35,6 +55,102 @@ isWeekend _   = False
 daysToParty :: Day -> Int
 daysToParty Fri = 0
 daysToParty day = daysToParty (nextDay day) + 1
+
+
+class Creature a where
+    health :: a -> Int
+    attack :: a -> Int
+    courage :: a -> Integer
+    hit :: Int -> a -> a
+
+data Knight = Knight
+    { name :: String
+    , rank :: String
+    , knightHealth :: Int
+    , knightAttack :: Int
+    } deriving (Show)
+
+instance Creature Knight where
+    health = knightHealth
+    attack = knightAttack
+    courage _ = 9000
+    hit dmg knight = knight { knightHealth = max (health knight - dmg) 0 }
+
+data Monster = Monster
+    { monsterHealth :: Int
+    , monsterAttack :: Int
+    } deriving (Show)
+
+instance Creature Monster where
+    health = monsterHealth
+    attack = monsterAttack
+    courage _ = 3
+    hit dmg monster = monster { monsterHealth = max (health monster - dmg) 0 }
+
+fight :: (Creature a, Creature b) => a -> b -> (Either a b, Int)
+fight c1 c2
+    | courage c1 > courage c2 = makeStat $ fight' c1 c2
+    | otherwise               = makeStat $ flipEither $ fight' c2 c1
+  where
+    fight' :: (Creature a, Creature b) => a -> b -> Either a b
+    fight' c1' c2' =
+        let newC2 = hit (attack c1') c2'
+        in if health newC2 > 0
+            then flipEither $ fight' newC2 c1'
+            else Left c1'
+
+    flipEither :: Either a b -> Either b a
+    flipEither (Left x) = Right x
+    flipEither (Right x) = Left x
+
+    makeStat (Left x)  = (Left x,  health c1 - health x)
+    makeStat (Right x) = (Right x, health c2 - health x)
+
+
+data Vector
+    = Vector2D Double Double
+    | Vector3D Double Double Double
+    deriving Show
+
+getX :: Vector -> Double
+getX (Vector2D x _)   = x
+getX (Vector3D x _ _) = x
+
+getY :: Vector -> Double
+getY (Vector2D _ y)   = y
+getY (Vector3D _ y _) = y
+
+getZ :: Vector -> Double
+getZ (Vector2D _ _)   = 0
+getZ (Vector3D _ _ z) = z
+
+euclidNorm :: Vector -> Double
+euclidNorm v = sqrt $ getX v ** 2 + getY v ** 2 + getZ v ** 2
+
+add :: Vector -> Vector -> Vector
+add (Vector2D x1 y1) (Vector2D x2 y2) = Vector2D (x1 + x2) (y1 + y2)
+add vec1 vec2 = Vector3D
+        (getX vec1 + getX vec2)
+        (getY vec1 + getY vec2)
+        (getZ vec1 + getZ vec2)
+
+scalar :: Vector -> Vector -> Double
+scalar vec1 vec2 = getX vec1 * getX vec2
+        + getY vec1 * getY vec2
+        + getZ vec1 * getZ vec2
+
+neg :: Vector -> Vector
+neg (Vector2D x y)   = Vector2D (-x) (-y)
+neg (Vector3D x y z) = Vector3D (-x) (-y) (-z)
+
+dist :: Vector -> Vector -> Double
+dist vec1 vec2 = euclidNorm $ add vec1 (neg vec2)
+
+vectorProduct :: Vector -> Vector -> Vector
+vectorProduct vec1 vec2 = Vector3D
+        (getY vec1 * getZ vec2 + getZ vec1 * getY vec2)
+        (getZ vec1 * getX vec2 + getX vec1 * getZ vec2)
+        (getX vec1 * getY vec2 + getY vec1 * getX vec2)
 
 
 data Nat = Z | S Nat deriving Show
@@ -90,3 +206,34 @@ instance Integral Nat where
     divMod = quotRem
 
 -- ‘even’ and ‘gcd’ defined in ‘GHC.Real’ now work
+
+
+{-
+Функцию fromList, которая создаёт дерево из списка элементов.
+-}
+
+-- ‘null’ and ‘length’ defined in ‘Data.Foldable’ now work
+
+treeElem :: Ord a => a -> Tree a -> Bool
+treeElem _ Leaf = False
+treeElem y (Node x left right)
+    | y == x    = True
+    | y < x     = treeElem y left
+    | otherwise = treeElem y right
+
+treeInsert :: Ord a => a -> Tree a -> Tree a
+treeInsert y Leaf = Node y Leaf Leaf
+treeInsert y tree@(Node x left right)
+    | y == y    = tree
+    | y < x     = Node x (treeInsert y left) right
+    | otherwise = Node x left (treeInsert y right)
+
+fromList :: Ord a => [a] -> Tree a
+fromList xs = fromSorted $ mergeSort xs
+  where
+    fromSorted [] = Leaf
+    fromSorted list = Node x left right
+      where
+        (part1, x:part2) = splitAt (length list `div` 2) list
+        left = fromSorted part1
+        right = fromSorted part2
