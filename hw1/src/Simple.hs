@@ -21,9 +21,10 @@ highestBit = fst . highestBitHard
 
 -- Дополнительно необходимо вернуть показатель степени.
 highestBitHard :: (Ord a, Num a) => a -> (a, Int)
-highestBitHard n = head $ filter ((>= n) . fst) $ iterate nextExp (fromInteger 1, 0)
+highestBitHard n = head $ filter ((> n) . (*2) . fst)
+                        $ iterate nextExp (fromInteger 1, 0)
   where
-    nextExp (value, power) = (value * 2, power + 1)
+    nextExp (value, power) = (2 * value, power + 1)
 
 -- Функция должна повторять каждый элемент столько раз, чему равен сам элемент.
 smartReplicate :: [Int] -> [Int]
