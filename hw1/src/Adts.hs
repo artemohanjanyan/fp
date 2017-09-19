@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 module Adts
     ( Day (..)
     , nextDay
@@ -19,16 +20,15 @@ module Adts
 
     , Nat (..)
 
-    , module TreePrinters
+    , Tree (..)
     , treeElem
     , treeInsert
     , fromList
     ) where
 
-import TreePrinters (Tree (..), directoryPrint, verticalPrint)
-import Patterns (mergeSort)
+import           Patterns (mergeSort)
 
-import GHC.Real (Ratio((:%)))
+import           GHC.Real (Ratio ((:%)))
 
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun
     deriving (Show, Read, Eq, Ord, Bounded, Enum)
@@ -64,8 +64,8 @@ class Creature a where
     hit :: Int -> a -> a
 
 data Knight = Knight
-    { name :: String
-    , rank :: String
+    { name         :: String
+    , rank         :: String
     , knightHealth :: Int
     , knightAttack :: Int
     } deriving (Show)
@@ -100,7 +100,7 @@ fight c1 c2
             else Left c1'
 
     flipEither :: Either a b -> Either b a
-    flipEither (Left x) = Right x
+    flipEither (Left x)  = Right x
     flipEither (Right x) = Left x
 
     makeStat (Left x)  = (Left x,  health c1 - health x)
@@ -208,9 +208,12 @@ instance Integral Nat where
 -- ‘even’ and ‘gcd’ defined in ‘GHC.Real’ now work
 
 
-{-
-Функцию fromList, которая создаёт дерево из списка элементов.
--}
+data Tree a = Leaf | Node a (Tree a) (Tree a)
+    deriving (Functor, Show)
+
+instance Foldable Tree where
+    foldr _   init' Leaf         = init'
+    foldr acc init' (Node x l r) = foldr acc (acc x (foldr acc init' r)) l
 
 -- ‘null’ and ‘length’ defined in ‘Data.Foldable’ now work
 

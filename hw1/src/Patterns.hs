@@ -8,8 +8,8 @@ module Patterns
     , mergeSort
     ) where
 
-import Data.Char (isDigit, isSpace)
-import System.Random (newStdGen, randomRs)
+import           Data.Char     (isDigit, isSpace)
+import           System.Random (newStdGen, randomRs)
 
 randomIntList :: Int -> Int -> Int -> IO [Int]
 randomIntList n from to = take n . randomRs (from, to) <$> newStdGen

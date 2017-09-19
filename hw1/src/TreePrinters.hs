@@ -1,21 +1,14 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE ViewPatterns  #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module TreePrinters
-       ( Tree (..)
-       , directoryPrint
+       ( directoryPrint
        , verticalPrint
        ) where
 
+import           Adts      (Tree (..))
+
 import           Data.Char (isSpace)
 import           Data.List (maximum)
-
-data Tree a = Leaf | Node a (Tree a) (Tree a)
-    deriving (Functor, Show)
-
-instance Foldable Tree where
-    foldr _   init' Leaf = init'
-    foldr acc init' (Node x l r) = foldr acc (acc x (foldr acc init' r)) l
 
 -- | Prints tree like directories inside terminal.
 -- Couple examples are given below.
