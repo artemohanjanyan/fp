@@ -22,7 +22,7 @@ highestBit = fst . highestBitHard
 -- Дополнительно необходимо вернуть показатель степени.
 highestBitHard :: (Ord a, Num a) => a -> (a, Int)
 highestBitHard n = head $ filter ((> n) . (*2) . fst)
-                        $ iterate nextExp (fromInteger 1, 0)
+                        $ iterate nextExp (1, 0)
   where
     nextExp (value, power) = (2 * value, power + 1)
 
