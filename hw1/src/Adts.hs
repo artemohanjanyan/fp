@@ -29,6 +29,7 @@ module Adts
 import           Patterns (mergeSort)
 
 import           GHC.Real (Ratio ((:%)))
+import           Data.Semigroup (Semigroup (..))
 
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun
     deriving (Show, Read, Eq, Ord, Bounded, Enum)
@@ -240,3 +241,12 @@ fromList xs = fromSorted $ mergeSort xs
         (part1, x:part2) = splitAt (length list `div` 2) list
         left = fromSorted part1
         right = fromSorted part2
+
+instance Semigroup (Tree a) where
+    (<>) = mappend
+
+instance Monoid (Tree a) where
+    mempty = Leaf
+    mappend Leaf a = a
+    mappend a Leaf = a
+    mappend a (Node x l r) = Node x (mappend a l) r

@@ -5,6 +5,10 @@ module Monoids
 
     , NonEmpty (..)
     , Identity (..)
+
+    , Name (..)
+    , Endo (..)
+    , Arrow (..)
     ) where
 
 import           Data.Either    (either)
@@ -17,38 +21,51 @@ maybeConcat = mconcat . map (fromMaybe mempty)
 eitherConcat :: (Monoid a, Monoid b) => [Either a b] -> (a, b)
 eitherConcat = mconcat . map (either (, mempty) (mempty, ))
 
+
 data NonEmpty a = a :| [a]
+    deriving Show
 
 instance Semigroup (NonEmpty a) where
-    (<>) = undefined
-    sconcat = undefined
-    stimes = undefined
+    (x :| xs) <> (y :| ys) = x :| (xs ++ [y] ++ ys)
 
 newtype Identity a = Identity { runIdentity :: a }
+    deriving Show
 
-instance Semigroup (Identity a) where
-    (<>) = undefined
-    sconcat = undefined
-    stimes = undefined
+instance Semigroup a => Semigroup (Identity a) where
+    (Identity x) <> (Identity y) = Identity (x <> y)
 
-instance Monoid (Identity a) where
-    mempty = undefined
-    mappend = undefined
+instance Monoid a => Monoid (Identity a) where
+    mempty = Identity mempty
+    mappend (Identity x) (Identity y) = Identity (mappend x y)
 
-{-
-Усложнённая версия
 
-Дополнительно реализуйте следующие инстансы:
+newtype Name = Name String
+    deriving Show
 
-Semigroup и Monoid для строк, объединяемых при помощи '.'.
-ghci> Name "root" <> Name "server"
-Name "root.server"
-Semigroup и Monoid для newtype Endo a = Endo { getEndo :: a -> a }.
-Semigroup и Monoid для
+instance Semigroup Name where
+    (<>) = mappend
+
+instance Monoid Name where
+    mempty = Name ""
+    mappend xn@(Name x) yn@(Name y)
+        | null x    = yn
+        | null y    = xn
+        | otherwise = Name (x ++ "." ++ y)
+
+newtype Endo a = Endo { getEndo :: a -> a }
+
+instance Semigroup (Endo a) where
+    (<>) = mappend
+
+instance Monoid (Endo a) where
+    mempty = Endo id
+    mappend (Endo x) (Endo y) = Endo (x . y)
+
 newtype Arrow a b = Arrow { getArrow :: a -> b }
-instance Semigroup b => Semigroup (Arrow a b)
-instance Monoid    b => Monoid    (Arrow a b)
 
-Задание 3
-Реализуйте инстансы классов типов Semigroup и Monoid для типа Tree. Объединение двух деревьев должно создавать новое дерево, в котором присутствуют элементы из обоих деревьев.
- -}
+instance Semigroup b => Semigroup (Arrow a b) where
+    a <> b = Arrow $ \x -> getArrow a x <> getArrow b x
+
+instance Monoid b => Monoid (Arrow a b) where
+    mempty = Arrow $ const mempty
+    mappend a b = Arrow $ \x -> getArrow a x `mappend` getArrow b x
