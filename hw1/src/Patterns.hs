@@ -27,10 +27,10 @@ removeAtHard n (x:xs) = (x:) <$> removeAtHard (n - 1) xs
 -- Необходимо написать функцию, которая выбрасывает из списка каждый k-ый
 -- элемент, при этом все выброшенные элементы нужно тоже вернуть.
 collectEvery :: Int -> [a] -> ([a], [a])
-collectEvery k = collectEveryIt 0
+collectEvery k = collectEveryIt 1
   where
     collectEveryIt n (x:xs)
-        | k == n    = (x:) <$> collectEveryIt 0 xs
+        | k == n    = (x:) <$> collectEveryIt 1 xs
         | otherwise =
             let (left, dropped) = collectEveryIt (n + 1) xs
             in (x:left, dropped)

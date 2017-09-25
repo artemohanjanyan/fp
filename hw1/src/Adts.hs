@@ -12,9 +12,13 @@ module Adts
     , fight
 
     , Vector (..)
+    , getX
+    , getY
+    , getZ
     , euclidNorm
     , add
     , scalar
+    , neg
     , dist
     , vectorProduct
 
@@ -44,7 +48,7 @@ nextDay day = succ day
 afterDays :: Day -> Int -> Day
 afterDays day dayN = afterDays' day (dayN `mod` 7)
   where
-    afterDays' day' dayN' = iterate succ day' !! dayN'
+    afterDays' day' dayN' = iterate nextDay day' !! dayN'
 
 -- Проверяет, является ли день недели выходным.
 isWeekend :: Day -> Bool
@@ -69,7 +73,7 @@ data Knight = Knight
     , rank         :: String
     , knightHealth :: Int
     , knightAttack :: Int
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 instance Creature Knight where
     health = knightHealth
@@ -80,7 +84,7 @@ instance Creature Knight where
 data Monster = Monster
     { monsterHealth :: Int
     , monsterAttack :: Int
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 instance Creature Monster where
     health = monsterHealth
@@ -111,7 +115,7 @@ fight c1 c2
 data Vector
     = Vector2D Double Double
     | Vector3D Double Double Double
-    deriving Show
+    deriving (Show, Eq)
 
 getX :: Vector -> Double
 getX (Vector2D x _)   = x
@@ -149,9 +153,9 @@ dist vec1 vec2 = euclidNorm $ add vec1 (neg vec2)
 
 vectorProduct :: Vector -> Vector -> Vector
 vectorProduct vec1 vec2 = Vector3D
-        (getY vec1 * getZ vec2 + getZ vec1 * getY vec2)
-        (getZ vec1 * getX vec2 + getX vec1 * getZ vec2)
-        (getX vec1 * getY vec2 + getY vec1 * getX vec2)
+        (getY vec1 * getZ vec2 - getZ vec1 * getY vec2)
+        (getZ vec1 * getX vec2 - getX vec1 * getZ vec2)
+        (getX vec1 * getY vec2 - getY vec1 * getX vec2)
 
 
 data Nat = Z | S Nat deriving Show
@@ -210,7 +214,7 @@ instance Integral Nat where
 
 
 data Tree a = Leaf | Node a (Tree a) (Tree a)
-    deriving (Functor, Show)
+    deriving (Functor, Show, Eq)
 
 instance Foldable Tree where
     foldr _   init' Leaf         = init'
@@ -228,7 +232,7 @@ treeElem y (Node x left right)
 treeInsert :: Ord a => a -> Tree a -> Tree a
 treeInsert y Leaf = Node y Leaf Leaf
 treeInsert y tree@(Node x left right)
-    | y == y    = tree
+    | y == x    = tree
     | y < x     = Node x (treeInsert y left) right
     | otherwise = Node x left (treeInsert y right)
 
