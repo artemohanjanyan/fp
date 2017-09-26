@@ -23,13 +23,13 @@ eitherConcat = mconcat . map (either (, mempty) (mempty, ))
 
 
 data NonEmpty a = a :| [a]
-    deriving Show
+    deriving (Show, Eq)
 
 instance Semigroup (NonEmpty a) where
     (x :| xs) <> (y :| ys) = x :| (xs ++ [y] ++ ys)
 
 newtype Identity a = Identity { runIdentity :: a }
-    deriving Show
+    deriving (Show, Eq)
 
 instance Semigroup a => Semigroup (Identity a) where
     (Identity x) <> (Identity y) = Identity (x <> y)
@@ -40,7 +40,7 @@ instance Monoid a => Monoid (Identity a) where
 
 
 newtype Name = Name String
-    deriving Show
+    deriving (Show, Eq)
 
 instance Semigroup Name where
     (<>) = mappend

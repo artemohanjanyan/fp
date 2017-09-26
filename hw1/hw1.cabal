@@ -33,6 +33,8 @@ test-suite hw1-test
   other-modules:       SimpleSpec
                      , PatternsSpec
                      , AdtsSpec
+                     , FoldsSpec
+                     , MonoidsSpec
   build-depends:       base
                      , hw1
                      , hspec

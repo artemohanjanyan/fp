@@ -6,6 +6,9 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
+    it "randomIntList" $
+        randomIntList 5 0 5 >>= (`shouldSatisfy` (== 5) . length)
+
     it "removeAt" $ do
         removeAt 1  [1, 2, 3] `shouldBe` [1, 3]
         removeAt 10 [1, 2, 3] `shouldBe` [1, 2, 3]
@@ -18,7 +21,7 @@ spec = do
         removeAtHard 3  [1..5]    `shouldBe` (Just 4, [1, 2, 3, 5])
         removeAtHard 2  "abc"     `shouldBe` (Just 'c', "ab")
 
-    it "collectEvery" $ do
+    it "collectEvery" $
         collectEvery 3 [1..8] `shouldBe` ([1, 2, 4, 5, 7, 8], [3, 6])
 
     it "stringSum" $ do
@@ -60,3 +63,4 @@ spec = do
 
     it "mergeSort" $ do
         mergeSort [2, 1, 0, 3, 10, 5] `shouldBe` [0, 1, 2, 3, 5, 10]
+        mergeSort ([] :: [Int])       `shouldBe` ([] :: [Int])

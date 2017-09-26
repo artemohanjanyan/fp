@@ -21,6 +21,7 @@ spec = do
         it "isWeekend" $ do
             Tue `shouldSatisfy` not . isWeekend
             Sat `shouldSatisfy` isWeekend
+            Sun `shouldSatisfy` isWeekend
 
         it "daysToParty" $ do
             daysToParty Sat `shouldBe` 6
@@ -31,22 +32,25 @@ spec = do
             (Left (Knight "Arthur" "The Terrible" 100 50), 0)
         fight (Knight "Arthur" "The Terrible" 100 50) (Monster 51 2) `shouldBe`
             (Left (Knight "Arthur" "The Terrible" 98 50), 2)
+        fight (Monster 49 2) (Knight "Arthur" "The Terrible" 100 50) `shouldBe`
+            (Right (Knight "Arthur" "The Terrible" 100 50), 0)
 
     describe "Vector" $ do
-        it "euclidNorm" $ do
+        it "euclidNorm" $
             euclidNorm (Vector2D 3 4) `shouldBe` 5
 
         it "add" $ do
-            add (Vector2D 3 4) (Vector2D 5 6)   `shouldBe` (Vector2D 8 10)
-            add (Vector2D 3 4) (Vector3D 5 6 7) `shouldBe` (Vector3D 8 10 7)
+            add (Vector2D 3 4) (Vector2D 5 6)   `shouldBe` Vector2D 8 10
+            add (Vector2D 3 4) (Vector3D 5 6 7) `shouldBe` Vector3D 8 10 7
 
-        it "scalar" $ do
+        it "scalar" $
             scalar (Vector2D 1 2) (Vector2D (-2) 1) `shouldBe` 0
 
         it "neg" $ do
-            neg (Vector2D 1 2) `shouldBe` Vector2D (-1) (-2)
+            neg (Vector2D 1 2)         `shouldBe` Vector2D (-1) (-2)
+            neg (Vector3D (-3) 2 (-1)) `shouldBe` Vector3D 3 (-2) 1
 
-        it "dist" $ do
+        it "dist" $
             dist (Vector2D 3 4) (Vector2D 7 7) `shouldBe` 5
 
         it "vectorProduct" $ do
@@ -56,24 +60,26 @@ spec = do
                 (== 0) . getZ
             vectorProduct (Vector2D 0 1) (Vector2D 3 4) `shouldSatisfy`
                 (< 0) . getZ
+            vectorProduct (Vector3D 3 (-3) 1) (Vector3D 4 9 2) `shouldBe`
+                Vector3D (-15) (-2) 39
 
     describe "Nat" $ do
         let nat :: Integer -> Nat
             nat = fromInteger
 
-        it "Nat + Nat" $ do
+        it "Nat + Nat" $
             nat 1 + nat 2 `shouldBe` nat 3
 
-        it "Nat * Nat" $ do
+        it "Nat * Nat" $
             nat 4 * nat 9 `shouldBe` nat 36
 
-        it "Nat - Nat" $ do
+        it "Nat - Nat" $
             nat 3 - nat 2 `shouldBe` nat 1
 
-        it "fromInteger" $ do
-            fromInteger 2 `shouldBe` S (S Z)
+        it "fromInteger" $
+            2 `shouldBe` S (S Z)
 
-        it "toInteger" $ do
+        it "toInteger" $
             toInteger (S (S Z)) `shouldBe` 2
 
         it "Eq" $ do
@@ -115,6 +121,9 @@ spec = do
 
         it "treeInsert" $ do
             toList (treeInsert 3 (fromList [1, 2])) `shouldBe` [1, 2, 3]
+            treeInsert 1 (Node 1 Leaf Leaf) `shouldBe` Node 1 Leaf Leaf
+            treeInsert 0 (Node 1 Leaf Leaf) `shouldBe`
+                Node 1 (Node 0 Leaf Leaf) Leaf
 
-        it "fromList" $ do
+        it "fromList" $
             fromList [1 :: Int] `shouldBe` Node (1 :: Int) Leaf Leaf

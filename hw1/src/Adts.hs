@@ -30,10 +30,10 @@ module Adts
     , fromList
     ) where
 
-import           Patterns (mergeSort)
+import           Patterns       (mergeSort)
 
-import           GHC.Real (Ratio ((:%)))
 import           Data.Semigroup (Semigroup (..))
+import           GHC.Real       (Ratio ((:%)))
 
 data Day = Mon | Tue | Wed | Thu | Fri | Sat | Sun
     deriving (Show, Read, Eq, Ord, Bounded, Enum)
@@ -217,6 +217,9 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
     deriving (Functor, Show, Eq)
 
 instance Foldable Tree where
+    foldMap _ Leaf         = mempty
+    foldMap f (Node x l r) = foldMap f l `mappend` f x `mappend` foldMap f r
+
     foldr _   init' Leaf         = init'
     foldr acc init' (Node x l r) = foldr acc (acc x (foldr acc init' r)) l
 
@@ -251,6 +254,6 @@ instance Semigroup (Tree a) where
 
 instance Monoid (Tree a) where
     mempty = Leaf
-    mappend Leaf a = a
-    mappend a Leaf = a
+    mappend Leaf a         = a
+    mappend a Leaf         = a
     mappend a (Node x l r) = Node x (mappend a l) r
