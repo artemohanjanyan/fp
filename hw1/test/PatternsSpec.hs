@@ -1,8 +1,8 @@
 module PatternsSpec where
 
-import Patterns
+import           Patterns
 
-import Test.Hspec
+import           Test.Hspec
 
 spec :: Spec
 spec = do

@@ -1,12 +1,12 @@
 module MonoidsSpec where
 
-import Monoids
-import Adts
+import           Adts
+import           Monoids
 
-import Data.Semigroup (Semigroup (..))
-import Data.Monoid (Sum (..))
+import           Data.Monoid    (Sum (..))
+import           Data.Semigroup (Semigroup (..))
 
-import Test.Hspec
+import           Test.Hspec
 
 spec :: Spec
 spec = do

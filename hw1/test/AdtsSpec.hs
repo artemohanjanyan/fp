@@ -1,10 +1,10 @@
 module AdtsSpec where
 
-import Adts
+import           Adts
 
-import Data.Foldable (toList)
+import           Data.Foldable (toList)
 
-import Test.Hspec
+import           Test.Hspec
 
 spec :: Spec
 spec = do

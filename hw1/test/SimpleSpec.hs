@@ -1,8 +1,8 @@
 module SimpleSpec where
 
-import Simple
+import           Simple
 
-import Test.Hspec
+import           Test.Hspec
 
 spec :: Spec
 spec = do
