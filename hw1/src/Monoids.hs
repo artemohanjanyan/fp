@@ -15,11 +15,11 @@ import           Data.Either    (either)
 import           Data.Maybe     (fromMaybe)
 import           Data.Semigroup (Semigroup (..))
 
-maybeConcat :: Monoid a => [Maybe a] -> a
-maybeConcat = mconcat . map (fromMaybe mempty)
+maybeConcat :: (Foldable t, Monoid a) => t (Maybe a) -> a
+maybeConcat = foldMap (fromMaybe mempty)
 
-eitherConcat :: (Monoid a, Monoid b) => [Either a b] -> (a, b)
-eitherConcat = mconcat . map (either (, mempty) (mempty, ))
+eitherConcat :: (Foldable t, Monoid a, Monoid b) => t (Either a b) -> (a, b)
+eitherConcat = foldMap (either (, mempty) (mempty, ))
 
 
 data NonEmpty a = a :| [a]
