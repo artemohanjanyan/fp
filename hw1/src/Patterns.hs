@@ -20,6 +20,8 @@ removeAt i = snd . removeAtHard i
 
 -- Тип функции removeAt должен быть следующим:
 removeAtHard :: Int -> [a] -> (Maybe a, [a])
+removeAtHard n _
+    | n < 0           = error "negative index"
 removeAtHard 0 (x:xs) = (Just x, xs)
 removeAtHard _ []     = (Nothing, [])
 removeAtHard n (x:xs) = (x:) <$> removeAtHard (n - 1) xs
