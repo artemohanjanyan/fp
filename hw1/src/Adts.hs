@@ -32,6 +32,7 @@ module Adts
 
 import           Patterns       (mergeSort)
 
+import           Data.Foldable  (toList)
 import           Data.Semigroup (Semigroup (..))
 import           GHC.Real       (Ratio ((:%)))
 
@@ -249,11 +250,12 @@ fromList xs = fromSorted $ mergeSort xs
         left = fromSorted part1
         right = fromSorted part2
 
-instance Semigroup (Tree a) where
+instance Ord a => Semigroup (Tree a) where
     (<>) = mappend
 
-instance Monoid (Tree a) where
+instance Ord a => Monoid (Tree a) where
     mempty = Leaf
-    mappend Leaf a         = a
-    mappend a Leaf         = a
-    mappend a (Node x l r) = Node x (mappend a l) r
+    mappend a b = fromList $ toList a ++ toList b
+    --mappend Leaf a         = a
+    --mappend a Leaf         = a
+    --mappend a (Node x l r) = Node x (mappend a l) r
