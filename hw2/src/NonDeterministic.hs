@@ -28,7 +28,7 @@ permutations list =
     permutations rest >>= \restPerm ->
     pure (first:restPerm)
   where
-   splits :: [a] -> [(a, [a])]
-   splits []     = undefined
-   splits [x]    = [(x, [])]
-   splits (x:xs) = (x, xs) : map (fmap (x:)) (splits xs)
+    splits :: [a] -> [(a, [a])]
+    splits []     = undefined
+    splits [x]    = [(x, [])]
+    splits (x:xs) = (x, xs) : map (fmap (x:)) (splits xs)
