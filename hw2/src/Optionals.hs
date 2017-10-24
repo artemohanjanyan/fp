@@ -112,4 +112,16 @@ instance C.Category (~>) where
  - =[def (>=>)]= Partial (\x -> apply f x >>= pure)
  - =[monad law]= Partial (\x -> apply f x)
  - =[eta equality]= Partial (apply f)
+ -
+ - f . id
+ - =[def id]= f . Partial Just
+ - =[def (.)]= Partial (apply (Partial Just) >=> apply f)
+ - =[def apply]= Partial (Just >=> apply f)
+ - =[def pure]= Partial (pure >=> apply f)
+ - =[def (>=>)]= Partial (\x -> pure x >>= apply f)
+ - =[monad law]= Partial (\x -> apply f x)
+ - =[eta equality]= Partial (apply f)
+ -
+ - apply (Partial (apply f))
+ - =[def apply]= apply f
  -}
