@@ -17,8 +17,11 @@ library
   hs-source-dirs:      src
   exposed-modules:     Optionals
                      , NonDeterministic
-                     , Base
                      , Parsers
+                     , Monads.Definitions
+                     , Monads.FromMonad
+                     , Monads.FromMonadFish
+                     , Monads.FromMonadJoin
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
