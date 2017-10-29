@@ -12,7 +12,7 @@ import           Prelude            (const, id)
 
 instance MonadFish m => Monad m where
     return = returnFish
-    m >>= f = (const m >=> f) "some value"
+    m >>= f = (const m >=> f) ()
 
 instance MonadFish m => MonadJoin m where
     returnJoin = returnFish
