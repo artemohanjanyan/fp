@@ -37,6 +37,7 @@ test-suite hw2-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       OptionalsSpec
+                     , NonDeterministicSpec
   build-depends:       base
                      , hw2
                      , hspec
