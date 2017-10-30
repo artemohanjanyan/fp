@@ -8,7 +8,7 @@ import           Parser.Common       (ParserC, char, ident, posInt, sepBy, space
 import           Parser.Core         (eof)
 
 import           Control.Applicative (Alternative (..))
-import           Control.Monad       (forM_, guard)
+import           Control.Monad       (forM_, guard, replicateM_)
 import qualified Data.Map.Strict     as Map
 
 newtype Let = Let [(String, Integer)]
@@ -49,5 +49,8 @@ printLet (Let exprs) = forM_ exprs printPair
     printPair (varName, varValue) =
         putStr "let " >>
         putStr varName >>
+        replicateM_ (maxIdentWidth - length varName) (putStr " ") >>
         putStr " = " >>
         print varValue
+
+    maxIdentWidth = maximum $ map (length . fst) exprs

@@ -8,12 +8,35 @@ module CustomInstances
     , Pair (..)
     ) where
 
-import           Prelude hiding (Either (..))
+import           Data.Foldable (Foldable (..))
+import           Prelude       hiding (Either (..), Foldable (..))
+
+{- Functor
+    1. fmap id         ≡ id
+    2. fmap f . fmap g ≡ fmap (f . g)
+-}
+
+{- Applicative
+    pure id <*> v = v
+    pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+    pure f <*> pure x = pure (f x)
+    u <*> pure y = pure ($ y) <*> u
+-}
 
 newtype Identity a = Identity { runIdentity :: a }
 
 instance Functor Identity where
     fmap f (Identity x) = Identity $ f x
+    {- 1. fmap id (Identity x)
+     - == Identity (id x)
+     - == Identity x
+     -
+     - 2. fmap f (fmap g (Identity x))
+     - == fmap f (Identity (g x))
+     - == Identity (f (g x))
+     - == Identity ((f . g) x)
+     - == fmap (f . g) (Identity x)
+     -}
 
 instance Applicative Identity where
     pure = Identity
@@ -21,6 +44,20 @@ instance Applicative Identity where
 
 instance Foldable Identity where
     foldMap f (Identity x) = f x
+
+    fold (Identity x) = x
+
+    {- fold (Identity x)                           ≡ foldMap id (Identity x)
+     - =[def fold]= x
+     - =[def id]= id x
+     - =[def foldMap] foldMap id (Identity x)
+     -}
+
+    {- foldMap f (Identity x)                      ≡ fold (fmap f Identity x)
+     - =[def foldMap]= f x
+     - =[def fold]= fold (Identity (f x))
+     - =[def fmap]= fold (fmap f (Identity x))
+     -}
 
 instance Traversable Identity where
     sequenceA (Identity x) = fmap Identity x
@@ -37,6 +74,24 @@ instance Applicative (Either a) where
     (Left x) <*> _ = Left x
     _ <*> (Left x) = Left x
     (Right f) <*> (Right x) = Right (f x)
+
+    {- pure (.) <*> u <*> v <*> w                  = u <*> (v <*> w)
+     - =[def pure]= Right (.) <*> u <*> v <*> w
+     -
+     - Right (.) <*> Left u <*> v <*> w
+     - = ... = Left u
+     -
+     - Right (.) <*> Right u <*> v <*> w
+     - = Right (u .) <*> v <*> w
+     -
+     - Right (u .) <*> Right v <*> w
+     - = Right (u . v) <*>
+     -
+     - Right (u . v) <*> Right w
+     - = Right ((u . v) w)
+     - = Right (u (v w))
+     - = ... = Right u <*> (Right v <*> Right w)
+    -}
 
 instance Foldable (Either a) where
     foldMap _ (Left _)  = mempty
@@ -60,6 +115,17 @@ instance Applicative Tree where
     _ <*> Leaf = Leaf
     (Node f fl fr) <*> (Node x xl xr) = Node (f x) (fl <*> xl) (fr <*> xr)
 
+    {- pure id <*> v                               = v
+     -
+     - pure id <*> Leaf
+     - =[def <*>]= Leaf
+     -
+     - pure id <*> (Node x l r)
+     - =[def <*>]= Node (id x) (pure id <*> l) (pure id <*> r)
+     - =[def id]= Node x (pure id <*> l) (pure id <*> r)
+     - =[ind]= Node x l r
+    -}
+
 instance Foldable Tree where
     foldMap _ Leaf         = mempty
     foldMap f (Node x l r) = foldMap f l `mappend` f x `mappend` foldMap f r
@@ -78,6 +144,13 @@ instance Monoid a => Applicative (Const a) where
     pure _ = Const mempty
     Const x <*> Const y = Const (x `mappend` y)
 
+    {- pure f <*> pure x                           = pure (f x)
+     - =[def pure]= Const mempty <*> Const mempty
+     - =[def <*>]= Const (mappend mempty mempty)
+     - =[Monoid 1.]= mempty
+     - =[def pure]= pure (f x)
+     -}
+
 instance Monoid a => Foldable (Const a) where
     foldMap _ _ = mempty
 
@@ -93,6 +166,16 @@ instance Functor (Pair a) where
 instance Monoid a => Applicative (Pair a) where
     pure = Pair mempty
     (Pair x1 f) <*> (Pair x2 y) = Pair (x1 `mappend` x2) (f y)
+
+    {- u <*> pure y                                = pure ($ y) <*> u
+     - =[def pure]= u <*> Pair mempty y
+     - =[def <*>]= Pair (u1 `mappend` mempty) (u2 y)
+     - =[Monoid 2.]= Pair mempty (u2 y)
+     - =[Monoid 1.]= Pair (mempty `mappend` u1) (u2 y)
+     - =[def $]= Pair (mempty `mappend` u1) (($ y) u2)
+     - =[def <*>]= Pair mempty ($ y) <*> Pair u1 u2
+     - =[def pure]= pure ($ y) <*> u
+     -}
 
 instance Foldable (Pair a) where
     foldMap f (Pair _ y) = f y
