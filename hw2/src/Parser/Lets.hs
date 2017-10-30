@@ -12,7 +12,7 @@ import           Control.Monad       (forM_, guard)
 import qualified Data.Map.Strict     as Map
 
 newtype Let = Let [(String, Integer)]
-    deriving Show
+    deriving (Show, Eq)
 
 simplify :: Map.Map String Integer -> ParserC Let
 simplify scope =

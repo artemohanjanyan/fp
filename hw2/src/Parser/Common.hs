@@ -52,10 +52,12 @@ intOrUppercase = void posInt <|> void (satisfy isUpper)
 -- http://www.seas.upenn.edu/~cis194/spring13/hw/11-applicative2.pdf
 
 zeroOrMore :: Alternative f => f a -> f [a]
-zeroOrMore = many
+--zeroOrMore = many
+zeroOrMore x = ((:) <$> x <*> zeroOrMore x) <|> pure []
 
 oneOrMore :: Alternative f => f a -> f [a]
-oneOrMore = some
+--oneOrMore = some
+oneOrMore x = (:) <$> x <*> zeroOrMore x
 
 spaces :: ParserC String
 spaces = many $ satisfy isSpace

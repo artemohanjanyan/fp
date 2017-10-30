@@ -10,7 +10,7 @@ import           Control.Monad       ((>=>))
 import           Data.Semigroup      (Semigroup (..))
 
 data ParseError = ParseError
-    deriving (Show)
+    deriving (Show, Eq)
 
 -- Monstupar
 newtype Parser t a = Parser
