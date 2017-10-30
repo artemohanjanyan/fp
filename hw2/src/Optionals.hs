@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Optionals
     ( Expr (..)
+    , ArithmeticError (..)
     , eval
     , partial
     , total
