@@ -1,4 +1,9 @@
-module Parser.Core where
+module Parser.Core
+    ( Parser (..)
+    , ParseError (..)
+    , eof
+    , satisfy
+    ) where
 
 import           Control.Applicative (Alternative (..))
 import           Control.Monad       ((>=>))

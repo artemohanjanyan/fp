@@ -4,7 +4,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Monads.FromMonadJoin where
+module Monads.FromMonadJoin
+    (
+    ) where
 
 import           Monads.Definitions
 

@@ -1,5 +1,15 @@
 {-# LANGUAGE TypeOperators #-}
-module Optionals where
+module Optionals
+    ( Expr (..)
+    , eval
+    , partial
+    , total
+    , apply
+    , applyOrElse
+    , withDefault
+    , isDefinedAt
+    , orElse
+    ) where
 
 import           Control.Applicative ((<|>))
 import qualified Control.Category    as C

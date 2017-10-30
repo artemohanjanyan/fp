@@ -1,4 +1,8 @@
-module Parser.Lets where
+module Parser.Lets
+    ( Let (..)
+    , simplify
+    , printLet
+    ) where
 
 import           Parser.Common       (ParserC, char, ident, posInt, sepBy, space, space1)
 import           Parser.Core         (eof)

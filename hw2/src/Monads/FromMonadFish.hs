@@ -4,7 +4,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Monads.FromMonadFish where
+module Monads.FromMonadFish
+    (
+    ) where
 
 import           Monads.Definitions
 

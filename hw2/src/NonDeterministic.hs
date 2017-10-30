@@ -1,4 +1,8 @@
-module NonDeterministic where
+module NonDeterministic
+    ( bin
+    , combinations
+    , permutations
+    ) where
 
 import           Control.Monad (replicateM)
 

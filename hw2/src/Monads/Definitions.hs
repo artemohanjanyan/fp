@@ -1,6 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Monads.Definitions where
+module Monads.Definitions
+    ( Monad (..)
+    , MonadFish (..)
+    , MonadJoin (..)
+    ) where
 
 class Monad m where
     return     :: a -> m a

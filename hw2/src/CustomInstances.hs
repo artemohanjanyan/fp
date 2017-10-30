@@ -1,6 +1,12 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module CustomInstances where
+module CustomInstances
+    ( Identity (..)
+    , Either (..)
+    , Tree (..)
+    , Const (..)
+    , Pair (..)
+    ) where
 
 import           Prelude hiding (Either (..))
 
@@ -49,7 +55,7 @@ instance Functor Tree where
     fmap f (Node x l r) = Node (f x) (fmap f l) (fmap f r)
 
 instance Applicative Tree where
-    pure x = Node x Leaf Leaf
+    pure x = Node x (pure x) (pure x)
     Leaf <*> _ = Leaf
     _ <*> Leaf = Leaf
     (Node f fl fr) <*> (Node x xl xr) = Node (f x) (fl <*> xl) (fr <*> xr)
