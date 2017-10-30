@@ -1,7 +1,8 @@
 module Parser.SExpr where
 
-import           Parser.Common (ParserC, ident, posInt)
-import           Parser.Core
+import           Parser.Common       (ParserC, char, ident, posInt)
+
+import           Control.Applicative (Alternative (..))
 
 type Ident = String
 
@@ -9,12 +10,13 @@ data Atom = N Integer | I Ident
     deriving Show
 
 data SExpr
-    = A Atom
+    = SAtom Atom
     | Comb [SExpr]
     deriving Show
 
 parseSExpr :: ParserC SExpr
-parseSExpr = char '('
+parseSExpr = (char '(' *> (Comb <$> some parseSExpr) <* char ')')
+        <|> SAtom <$> parseAtom
 
 parseAtom :: ParserC Atom
 parseAtom = N <$> posInt <|> I <$> ident

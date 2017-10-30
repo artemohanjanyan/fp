@@ -47,3 +47,8 @@ spaces = many $ satisfy isSpace
 
 ident :: ParserC String
 ident = (:) <$> satisfy isAlpha <*> many (satisfy isAlphaNum)
+
+sepBy :: Parser t a -> Parser t b -> Parser t [a]
+sepBy p sep = (:) <$> p <*> cont
+  where
+    cont = ((:) <$> (sep *> p) <*> cont) <|> pure []

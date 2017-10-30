@@ -19,6 +19,8 @@ library
                      , NonDeterministic
                      , Parser.Core
                      , Parser.Common
+                     , Parser.SExpr
+                     , Parser.Lets
                      , Monads.Definitions
                      , Monads.FromMonad
                      , Monads.FromMonadFish
@@ -27,6 +29,7 @@ library
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
+                     , containers
   default-language:    Haskell2010
 
 test-suite hw2-test
