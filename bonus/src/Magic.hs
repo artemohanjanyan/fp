@@ -1,6 +1,6 @@
 module Magic where
 
-data T a b f = MkT (a (b f))
+newtype T a b f = MkT (a (b f))
     deriving Show
 
 instance (Functor a, Functor b) => Functor (T a b) where

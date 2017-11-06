@@ -26,7 +26,7 @@ printTable f = do
     printRow (args, ans) = do
         forM_ args (putStr . boolToAlignedStr)
         putStr "= "
-        putStrLn (show ans)
+        print ans
 
     boolToAlignedStr :: Bool -> String
     boolToAlignedStr True  = "True  "
