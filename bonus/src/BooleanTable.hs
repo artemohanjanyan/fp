@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module BooleanTable where
 
@@ -11,7 +12,7 @@ class BooleanTableDomain a where
 instance BooleanTableDomain Bool where
     makeTable = pure . pure
 
-instance BooleanTableDomain a => BooleanTableDomain (Bool -> a) where
+instance (b ~ Bool, BooleanTableDomain a) => BooleanTableDomain (b -> a) where
     makeTable f = do
         arg <- [True, False]
         restTable <- makeTable (f arg)
