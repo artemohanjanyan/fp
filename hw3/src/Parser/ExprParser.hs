@@ -1,19 +1,14 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Parser.ExprParser
     ( exprParser
     ) where
 
 import           Core.Expr                  (Expr (..))
 
-import           Parser.Common              (Parser, lexeme, symbol_)
+import           Parser.Common              (Parser, identifier, lexeme, symbol_)
 
-import           Control.Applicative        (many, (*>), (<*), (<|>))
-
-import           Data.ByteString            (pack)
+import           Control.Applicative        ((*>), (<*), (<|>))
 
 import           Text.Megaparsec            (try)
-import           Text.Megaparsec.Byte       (alphaNumChar, letterChar)
 import qualified Text.Megaparsec.Byte.Lexer as L
 import           Text.Megaparsec.Expr       (Operator (..), makeExprParser)
 
@@ -26,8 +21,6 @@ termParser =
       <|> Var <$> identifier
       <|> parens (try letParser <|> exprParser)
   where
-    identifier = lexeme (pack <$> ((:) <$> letterChar <*> many alphaNumChar))
-
     letParser = do
         symbol_ "let"
         varName <- lexeme identifier

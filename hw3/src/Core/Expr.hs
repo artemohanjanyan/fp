@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Core.Expr
     ( Expr (..)
     , EvalError (..)
@@ -7,12 +5,13 @@ module Core.Expr
     , eval
     ) where
 
+import           Data.ByteString      (ByteString)
+import qualified Data.Map.Strict      as Map
+
 import           Control.Applicative  (liftA2)
 import           Control.Monad        (when)
 import           Control.Monad.Except (MonadError, throwError)
 import           Control.Monad.Reader (MonadReader, ask, local)
-import           Data.ByteString      (ByteString)
-import qualified Data.Map.Strict      as Map
 
 data Expr a
     = Lit a
@@ -23,6 +22,11 @@ data Expr a
     | Expr a :/: Expr a
     | Let ByteString (Expr a) (Expr a)
     deriving (Show)
+
+infixl 6 :+:
+infixl 6 :-:
+infixl 7 :*:
+infixl 7 :/:
 
 data EvalError
     = DivisionByZero

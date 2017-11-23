@@ -16,8 +16,11 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Core.Expr
+                     , Core.Variables
                      , Parser.Common
                      , Parser.ExprParser
+  default-extensions:  OverloadedStrings
+                     , FlexibleContexts
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
