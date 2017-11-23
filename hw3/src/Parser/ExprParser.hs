@@ -1,33 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ExprParser
+module Parser.ExprParser
     ( exprParser
     ) where
 
-import           Expr                       (Expr (..))
+import           Core.Expr                  (Expr (..))
 
+import           Parser.Common              (Parser, lexeme, symbol_)
 
-import           Control.Applicative        (empty, many, (*>), (<*), (<|>))
-import           Control.Monad              (void)
+import           Control.Applicative        (many, (*>), (<*), (<|>))
 
-import           Data.ByteString            (ByteString, pack)
-import           Data.Void                  (Void)
+import           Data.ByteString            (pack)
 
-import           Text.Megaparsec            (Parsec, try)
-import           Text.Megaparsec.Byte       (alphaNumChar, letterChar, space1)
+import           Text.Megaparsec            (try)
+import           Text.Megaparsec.Byte       (alphaNumChar, letterChar)
 import qualified Text.Megaparsec.Byte.Lexer as L
 import           Text.Megaparsec.Expr       (Operator (..), makeExprParser)
-
-type Parser = Parsec Void ByteString
-
-space :: Parser ()
-space = L.space space1 empty empty
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme space
-
-symbol_ :: ByteString -> Parser ()
-symbol_ = void . L.symbol space
 
 parens :: Parser a -> Parser a
 parens p = symbol_ "(" *> p <* symbol_ ")"

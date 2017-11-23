@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Expr
+module Core.Expr
     ( Expr (..)
     , EvalError (..)
     , EvalContext
