@@ -8,23 +8,31 @@ module Core.Program
     , runProgram
     ) where
 
-import           Core.Expr              (EvalContext, EvalError (..), eval)
-import           Core.Variables         (VariableAssignment (..),
-                                         VariableDeclaration (..), VariableError (..),
-                                         declareVariable, updateVariable)
+import           Core.Expr                  (EvalContext, EvalError (..), Expr, eval)
+import           Core.Variables             (VariableAssignment (..),
+                                             VariableDeclaration (..), VariableError (..),
+                                             VariableName, declareVariable,
+                                             updateVariable)
 
-import           Data.ByteString        (ByteString, append)
+import           Data.ByteString            (ByteString, append)
+import           Data.Void                  (Void)
 
-import           Control.Monad          (mapM_)
-import           Control.Monad.Except   (ExceptT, MonadError, throwError)
-import           Control.Monad.IO.Class (MonadIO)
-import           Control.Monad.Reader   (runReaderT)
+import           Control.Monad              (mapM_)
+import           Control.Monad.Except       (ExceptT, MonadError, throwError)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Control.Monad.Reader       (runReaderT)
 
-import           Control.Error.Util     (exceptT)
-import           Ether.State            (MonadState', get', modify')
+import           Control.Error.Util         (exceptT)
+import           Ether.State                (MonadState', get', modify')
+
+import           Text.Megaparsec            (Parsec, parse)
+import           Text.Megaparsec.Char       (space)
+import           Text.Megaparsec.Char.Lexer (decimal, signed)
+import           Text.Megaparsec.Error      (parseErrorPretty)
 
 type ProgramConstraint a m =
-    ( Integral a
+    ( Show a
+    , Integral a
     , MonadState' (EvalContext a) m
     , MonadState' StatementLine m
     , MonadError ProgramError m
@@ -36,6 +44,8 @@ type Program a = [Statement a]
 data Statement a
     = VariableDeclarationStatement (VariableDeclaration a)
     | VariableAssignmentStatement (VariableAssignment a)
+    | PrintStatement (Expr a)
+    | ReadStatement VariableName
     deriving (Show)
 
 data ProgramError = ProgramError
@@ -81,7 +91,7 @@ runVariableStatement :: ( Integral a
                         , MonadError ProgramError m
                         )
                      => VariableAssignment a
-                     -> (ByteString -> a -> ExceptT VariableError m ())
+                     -> (VariableName -> a -> ExceptT VariableError m ())
                      -> m ()
 runVariableStatement (VariableAssignment varName expr) action = do
     evalContext <- get'
@@ -89,11 +99,23 @@ runVariableStatement (VariableAssignment varName expr) action = do
     myHandle $ action varName exprValue
     modify' @StatementLine (+1)
 
-runStatement :: ProgramConstraint a m => Statement a -> m ()
+runStatement :: forall a m . ProgramConstraint a m => Statement a -> m ()
 runStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
         runVariableStatement statement declareVariable
 runStatement (VariableAssignmentStatement statement) =
         runVariableStatement statement updateVariable
+runStatement (PrintStatement expr) = do
+    evalContext <- get'
+    exprValue <- myHandle $ runReaderT (eval expr) evalContext
+    liftIO $ print exprValue
+runStatement (ReadStatement varName) = do
+    input <- liftIO getLine
+    case parse inputParser "input" input of
+        Left err    -> liftIO $ putStr $ parseErrorPretty err
+        Right value -> myHandle $ updateVariable varName value
+  where
+    inputParser :: Parsec Void String a
+    inputParser = signed space decimal
 
 runProgram :: ProgramConstraint a m => Program a -> m ()
 runProgram = mapM_ runStatement

@@ -1,2 +1,5 @@
-mut x = 1
+mut x = 1 + 1
 x = x * 2
+mut y = 0
+> y
+< x + y

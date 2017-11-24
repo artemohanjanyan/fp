@@ -1,5 +1,6 @@
 module Core.Variables
-    ( VariableAssignment (..)
+    ( VariableName
+    , VariableAssignment (..)
     , VariableDeclaration (..)
     , VariableError (..)
     , declareVariable
@@ -16,8 +17,10 @@ import           Control.Monad.Except (MonadError, throwError)
 
 import           Ether.State          (MonadState', get', put')
 
+type VariableName = ByteString
+
 data VariableAssignment a
-    = VariableAssignment ByteString (Expr a)
+    = VariableAssignment VariableName (Expr a)
     deriving (Show)
 
 newtype VariableDeclaration a
@@ -25,14 +28,14 @@ newtype VariableDeclaration a
     deriving (Show)
 
 data VariableError
-    = UndefinedVariableAssignment ByteString
-    | AlreadyDefinedVariable ByteString
+    = UndefinedVariableAssignment VariableName
+    | AlreadyDefinedVariable VariableName
     deriving (Show)
 
 declareVariable :: ( MonadState' (EvalContext a) m
                    , MonadError VariableError m
                    )
-                => ByteString -> a -> m ()
+                => VariableName -> a -> m ()
 declareVariable varName varValue = do
     context <- get'
     when (Map.member varName context)
@@ -42,7 +45,7 @@ declareVariable varName varValue = do
 updateVariable :: ( MonadState' (EvalContext a) m
                   , MonadError VariableError m
                   )
-               => ByteString -> a -> m ()
+               => VariableName -> a -> m ()
 updateVariable varName varValue = do
     context <- get'
     when (Map.notMember varName context)

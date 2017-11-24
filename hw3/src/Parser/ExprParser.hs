@@ -9,6 +9,7 @@ import           Parser.Common              (Parser, identifier, lexeme, symbol_
 import           Control.Applicative        ((*>), (<*), (<|>))
 
 import           Text.Megaparsec            (try)
+import           Text.Megaparsec.Byte       (space)
 import qualified Text.Megaparsec.Byte.Lexer as L
 import           Text.Megaparsec.Expr       (Operator (..), makeExprParser)
 
@@ -17,7 +18,7 @@ parens p = symbol_ "(" *> p <* symbol_ ")"
 
 termParser :: Integral a => Parser (Expr a)
 termParser =
-    Lit <$> lexeme L.decimal
+    Lit <$> lexeme (L.signed space L.decimal)
       <|> Var <$> identifier
       <|> parens (try letParser <|> exprParser)
   where
