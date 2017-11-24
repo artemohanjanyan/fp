@@ -19,7 +19,7 @@ parens p = symbol_ "(" *> p <* symbol_ ")"
 termParser :: Integral a => Parser (Expr a)
 termParser =
     Lit <$> lexeme (L.signed space L.decimal)
-      <|> Var <$> identifier
+      <|> Var <$> try identifier
       <|> parens (try letParser <|> exprParser)
   where
     letParser = do

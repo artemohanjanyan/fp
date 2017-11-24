@@ -17,13 +17,13 @@ import           Core.Variables             (VariableAssignment (..),
 import           Data.ByteString            (ByteString, append)
 import           Data.Void                  (Void)
 
-import           Control.Monad              (mapM_)
+import           Control.Monad              (forM_, mapM_)
 import           Control.Monad.Except       (ExceptT, MonadError, throwError)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
 import           Control.Monad.Reader       (runReaderT)
 
 import           Control.Error.Util         (exceptT)
-import           Ether.State                (MonadState', get', modify')
+import           Ether.State                (MonadState', get', modify', put')
 
 import           Text.Megaparsec            (Parsec, parse)
 import           Text.Megaparsec.Char       (space)
@@ -46,6 +46,7 @@ data Statement a
     | VariableAssignmentStatement (VariableAssignment a)
     | PrintStatement (Expr a)
     | ReadStatement VariableName
+    | ForStatement VariableName (Expr a) (Expr a) (Program a)
     deriving (Show)
 
 data ProgramError = ProgramError
@@ -108,14 +109,28 @@ runStatement (PrintStatement expr) = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     liftIO $ print exprValue
+    modify' @StatementLine (+1)
 runStatement (ReadStatement varName) = do
     input <- liftIO getLine
     case parse inputParser "input" input of
         Left err    -> liftIO $ putStr $ parseErrorPretty err
         Right value -> myHandle $ updateVariable varName value
+    modify' @StatementLine (+1)
   where
     inputParser :: Parsec Void String a
     inputParser = signed space decimal
+runStatement (ForStatement varName fromExpr toExpr body) = do
+    evalContext <- get'
+    fromValue <- myHandle $ runReaderT (eval fromExpr) evalContext
+    toValue <- myHandle $ runReaderT (eval toExpr) evalContext
+
+    modify' @StatementLine (+1)
+    forLine <- get' @StatementLine
+
+    forM_ [fromValue..toValue] $ \varValue -> do
+        myHandle $ updateVariable varName varValue
+        put' forLine
+        runProgram body
 
 runProgram :: ProgramConstraint a m => Program a -> m ()
 runProgram = mapM_ runStatement
