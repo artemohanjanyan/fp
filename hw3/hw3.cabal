@@ -18,11 +18,15 @@ library
   exposed-modules:     Core.Expr
                      , Core.Variables
                      , Core.Program
+                     , Core.ProgramIO
                      , Parser.Common
                      , Parser.ExprParser
+                     , Parser.VariablesParser
+                     , Parser.ProgramParser
   default-extensions:  OverloadedStrings
                      , FlexibleContexts
                      , ConstraintKinds
+                     , TypeApplications
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
@@ -30,6 +34,19 @@ library
                      , megaparsec >= 6.0
                      , bytestring
                      , ether
+                     , errors
+                     , parser-combinators
+  default-language:    Haskell2010
+
+executable hw3lang
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  default-extensions:  TypeApplications
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base >= 4.7 && < 5
+                     , megaparsec >= 6.0
+                     , bytestring
+                     , hw3
   default-language:    Haskell2010
 
 source-repository head

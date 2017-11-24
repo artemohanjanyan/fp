@@ -1,10 +1,12 @@
 module Parser.VariablesParser
-    (
+    ( variableAssignmentParser
+    , variableDeclarationParser
     ) where
 
-import           Core.Variables (VariableAssignment (..), VariableDeclaration (..))
+import           Core.Variables    (VariableAssignment (..), VariableDeclaration (..))
 
-import           Parser.Common  (Parser, identifier, symbol_)
+import           Parser.Common     (Parser, identifier, symbol_)
+import           Parser.ExprParser (exprParser)
 
 variableAssignmentParser :: Integral a => Parser (VariableAssignment a)
 variableAssignmentParser = do

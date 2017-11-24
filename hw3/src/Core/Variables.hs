@@ -16,9 +16,13 @@ import           Control.Monad.Except (MonadError, throwError)
 
 import           Ether.State          (MonadState', get', put')
 
-data VariableAssignment a = VariableAssignment ByteString (Expr a)
+data VariableAssignment a
+    = VariableAssignment ByteString (Expr a)
+    deriving (Show)
 
-newtype VariableDeclaration a = VariableDeclaration (VariableAssignment a)
+newtype VariableDeclaration a
+    = VariableDeclaration (VariableAssignment a)
+    deriving (Show)
 
 data VariableError
     = UndefinedVariableAssignment ByteString

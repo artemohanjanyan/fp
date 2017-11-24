@@ -2,9 +2,10 @@ module Core.Program
     ( Program
     , Statement (..)
     , ProgramError (..)
+    , StatementLine
     , ProgramErrorCause (..)
-    , runProgram
     , ProgramConstraint
+    , runProgram
     ) where
 
 import           Core.Expr              (EvalContext, EvalError (..), eval)
@@ -15,11 +16,12 @@ import           Core.Variables         (VariableAssignment (..),
 import           Data.ByteString        (ByteString, append)
 
 import           Control.Monad          (mapM_)
-import           Control.Monad.Except   (ExceptT, MonadError, runExceptT, throwError)
+import           Control.Monad.Except   (ExceptT, MonadError, throwError)
 import           Control.Monad.IO.Class (MonadIO)
 import           Control.Monad.Reader   (runReaderT)
 
-import           Ether.State            (MonadState', get')
+import           Control.Error.Util     (exceptT)
+import           Ether.State            (MonadState', get', modify')
 
 type ProgramConstraint a m =
     ( Integral a
@@ -34,10 +36,11 @@ type Program a = [Statement a]
 data Statement a
     = VariableDeclarationStatement (VariableDeclaration a)
     | VariableAssignmentStatement (VariableAssignment a)
+    deriving (Show)
 
 data ProgramError = ProgramError
     { programErrorDescription :: ByteString
-    , programErrorLine        :: Int
+    , programErrorLine        :: StatementLine
     }
 
 type StatementLine = Int
@@ -56,13 +59,6 @@ instance ProgramErrorCause EvalError where
     getDescription (UndefinedVariable varName) =
             "can't evaluate undefined variable " `append` varName
 
-handleError :: Monad m => (e -> m a) -> ExceptT e m a -> m a
-handleError handle m = do
-    runResult <- runExceptT m
-    case runResult of
-        Left err     -> handle err
-        Right result -> pure result
-
 handleProgramErrorCause :: ( MonadState' StatementLine m
                            , MonadError ProgramError m
                            , ProgramErrorCause e
@@ -77,7 +73,7 @@ myHandle :: ( MonadState' StatementLine m
             , ProgramErrorCause e
             )
          => ExceptT e m a -> m a
-myHandle = handleError handleProgramErrorCause
+myHandle = exceptT handleProgramErrorCause pure
 
 runVariableStatement :: ( Integral a
                         , MonadState' (EvalContext a) m
@@ -91,6 +87,7 @@ runVariableStatement (VariableAssignment varName expr) action = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     myHandle $ action varName exprValue
+    modify' @StatementLine (+1)
 
 runStatement :: ProgramConstraint a m => Statement a -> m ()
 runStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
