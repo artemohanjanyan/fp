@@ -13,7 +13,8 @@ import qualified Data.Map.Strict      as Map
 
 import           Control.Monad        (when)
 import           Control.Monad.Except (MonadError, throwError)
-import           Control.Monad.State  (MonadState, get, put)
+
+import           Ether.State          (MonadState', get', put')
 
 data VariableAssignment a = VariableAssignment ByteString (Expr a)
 
@@ -24,20 +25,22 @@ data VariableError
     | AlreadyDefinedVariable ByteString
     deriving (Show)
 
-declareVariable :: ( MonadState (EvalContext a) m
+declareVariable :: ( MonadState' (EvalContext a) m
                    , MonadError VariableError m
-                   ) => ByteString -> a -> m ()
+                   )
+                => ByteString -> a -> m ()
 declareVariable varName varValue = do
-    context <- get
+    context <- get'
     when (Map.member varName context)
             $ throwError $ AlreadyDefinedVariable varName
-    put $ Map.insert varName varValue context
+    put' $ Map.insert varName varValue context
 
-updateVariable :: ( MonadState (EvalContext a) m
+updateVariable :: ( MonadState' (EvalContext a) m
                   , MonadError VariableError m
-                  ) => ByteString -> a -> m ()
+                  )
+               => ByteString -> a -> m ()
 updateVariable varName varValue = do
-    context <- get
+    context <- get'
     when (Map.notMember varName context)
             $ throwError $ UndefinedVariableAssignment varName
-    put $ Map.insert varName varValue context
+    put' $ Map.insert varName varValue context

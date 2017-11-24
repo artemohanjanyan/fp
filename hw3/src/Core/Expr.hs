@@ -30,20 +30,21 @@ infixl 7 :/:
 
 data EvalError
     = DivisionByZero
-    | UndefinedVariable
+    | UndefinedVariable ByteString
     deriving (Show)
 
 type EvalContext a = Map.Map ByteString a
 
-eval :: ( MonadReader (EvalContext a) m
+eval :: ( Integral a
+        , MonadReader (EvalContext a) m
         , MonadError EvalError m
-        , Integral a
-        ) => Expr a -> m a
+        )
+     => Expr a -> m a
 eval (Lit expr)        = pure expr
 eval (Var var)         = do
     context <- ask
     case Map.lookup var context of
-        Nothing    -> throwError UndefinedVariable
+        Nothing    -> throwError $ UndefinedVariable var
         Just value -> pure value
 eval (expr1 :+: expr2) = liftA2 (+) (eval expr1) (eval expr2)
 eval (expr1 :-: expr2) = liftA2 (-) (eval expr1) (eval expr2)
