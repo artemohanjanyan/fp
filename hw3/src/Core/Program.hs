@@ -1,4 +1,8 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 module Core.Program
     ( Program
     , Statement (..)
@@ -6,7 +10,9 @@ module Core.Program
     , StatementLine
     , ProgramErrorCause (..)
     , ProgramConstraint
+    , ProgramMonad (..)
     , runProgram
+    , runProgramWithInitialCC
     ) where
 
 import           Prelude                    hiding (break)
@@ -20,29 +26,62 @@ import           Core.Variables             (VariableAssignment (..),
 import           Data.ByteString            (ByteString, append)
 import           Data.Void                  (Void)
 
-import           Control.Monad              (forM_, mapM_)
-import           Control.Monad.Cont         (MonadCont, callCC)
+import           Control.Monad              (forM_, join, mapM_)
+import           Control.Monad.Cont         (ContT, MonadCont, callCC)
 import           Control.Monad.Except       (ExceptT, MonadError, throwError)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Control.Monad.Reader       (runReaderT)
+import           Control.Monad.Reader       (MonadReader, ReaderT, ask, local, runReaderT)
 
 import           Control.Error.Util         (exceptT)
-import           Ether.State                (MonadState', get', modify', put')
+import           Ether.State                (MonadState, MonadState', StateT', get, get',
+                                             modify', put, put')
 
 import           Text.Megaparsec            (Parsec, parse)
 import           Text.Megaparsec.Char       (space)
 import           Text.Megaparsec.Char.Lexer (decimal, signed)
 import           Text.Megaparsec.Error      (parseErrorPretty)
 
+type IntegralConstraint a =
+    ( Integral a
+    , Show a
+    )
+
 type ProgramConstraint a m =
-    ( Show a
-    , Integral a
+    ( IntegralConstraint a
     , MonadState' (EvalContext a) m
     , MonadState' StatementLine m
     , MonadError ProgramError m
     , MonadCont m
+    , MonadReader (m ()) m
     , MonadIO m
     )
+
+newtype ProgramMonad a b = ProgramMonad
+    {
+        runProgramMonad ::
+        (StateT' (EvalContext a)
+            (StateT' StatementLine
+                (ExceptT ProgramError
+                    (ContT (Either ProgramError (((), EvalContext a), StatementLine))
+                        (ReaderT (ProgramMonad a ())
+                            IO
+                        )
+                    )
+                )
+            )
+        )
+        b
+    }
+    deriving (Functor, Applicative, Monad, MonadIO, MonadError ProgramError,
+              MonadCont, MonadReader (ProgramMonad a ()))
+
+instance MonadState (EvalContext a) (EvalContext a) (ProgramMonad a) where
+    get = ProgramMonad get'
+    put = ProgramMonad . put'
+
+instance MonadState StatementLine StatementLine (ProgramMonad a) where
+    get = ProgramMonad get'
+    put = ProgramMonad . put'
 
 type Program a = [Statement a]
 
@@ -106,17 +145,17 @@ runVariableStatement (VariableAssignment varName expr) action = do
     myHandle $ action varName exprValue
     modify' @StatementLine (+1)
 
-runStatement :: forall a m . (ProgramConstraint a m) => m () -> Statement a -> m ()
-runStatement _ (VariableDeclarationStatement (VariableDeclaration statement)) =
+runStatement :: forall a . (IntegralConstraint a) => Statement a -> ProgramMonad a ()
+runStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
         runVariableStatement statement declareVariable
-runStatement _ (VariableAssignmentStatement statement) =
+runStatement (VariableAssignmentStatement statement) =
         runVariableStatement statement updateVariable
-runStatement _ (PrintStatement expr) = do
+runStatement (PrintStatement expr) = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     liftIO $ print exprValue
     modify' @StatementLine (+1)
-runStatement _ (ReadStatement varName) = do
+runStatement (ReadStatement varName) = do
     input <- liftIO getLine
     case parse inputParser "input" input of
         Left err    -> liftIO $ putStr $ parseErrorPretty err
@@ -125,7 +164,7 @@ runStatement _ (ReadStatement varName) = do
   where
     inputParser :: Parsec Void String a
     inputParser = signed space decimal
-runStatement _ (ForStatement varName fromExpr toExpr body) = callCC $ \break -> do
+runStatement (ForStatement varName fromExpr toExpr body) = callCC $ \break -> do
     evalContext <- get'
     fromValue <- myHandle $ runReaderT (eval fromExpr) evalContext
     toValue <- myHandle $ runReaderT (eval toExpr) evalContext
@@ -133,12 +172,16 @@ runStatement _ (ForStatement varName fromExpr toExpr body) = callCC $ \break -> 
     modify' @StatementLine (+1)
     forLine <- get' @StatementLine
 
-    forM_ [fromValue..toValue] $ \varValue -> do
+    local (const $ break ()) $ forM_ [fromValue..toValue] $ \varValue -> do
         myHandle $ updateVariable varName varValue
         put' forLine
-        runProgram (break ()) body
-runStatement break BreakStatement = do
-    break
+        runProgram body
+runStatement BreakStatement = do
+    join ask
 
-runProgram :: (ProgramConstraint a m) => m () -> Program a -> m ()
-runProgram = mapM_ . runStatement
+runProgram :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
+runProgram = mapM_ runStatement
+
+runProgramWithInitialCC :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
+runProgramWithInitialCC program = callCC $ \break ->
+        local (const $ break ()) $ runProgram program
