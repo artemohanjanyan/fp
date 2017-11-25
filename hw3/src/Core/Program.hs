@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Core.Program
     ( Program
     , Statement (..)
@@ -7,6 +8,8 @@ module Core.Program
     , ProgramConstraint
     , runProgram
     ) where
+
+import           Prelude                    hiding (break)
 
 import           Core.Expr                  (EvalContext, EvalError (..), Expr, eval)
 import           Core.Variables             (VariableAssignment (..),
@@ -18,6 +21,7 @@ import           Data.ByteString            (ByteString, append)
 import           Data.Void                  (Void)
 
 import           Control.Monad              (forM_, mapM_)
+import           Control.Monad.Cont         (MonadCont, callCC)
 import           Control.Monad.Except       (ExceptT, MonadError, throwError)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
 import           Control.Monad.Reader       (runReaderT)
@@ -36,6 +40,7 @@ type ProgramConstraint a m =
     , MonadState' (EvalContext a) m
     , MonadState' StatementLine m
     , MonadError ProgramError m
+    , MonadCont m
     , MonadIO m
     )
 
@@ -47,6 +52,7 @@ data Statement a
     | PrintStatement (Expr a)
     | ReadStatement VariableName
     | ForStatement VariableName (Expr a) (Expr a) (Program a)
+    | BreakStatement
     deriving (Show)
 
 data ProgramError = ProgramError
@@ -100,17 +106,17 @@ runVariableStatement (VariableAssignment varName expr) action = do
     myHandle $ action varName exprValue
     modify' @StatementLine (+1)
 
-runStatement :: forall a m . ProgramConstraint a m => Statement a -> m ()
-runStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
+runStatement :: forall a m . (ProgramConstraint a m) => m () -> Statement a -> m ()
+runStatement _ (VariableDeclarationStatement (VariableDeclaration statement)) =
         runVariableStatement statement declareVariable
-runStatement (VariableAssignmentStatement statement) =
+runStatement _ (VariableAssignmentStatement statement) =
         runVariableStatement statement updateVariable
-runStatement (PrintStatement expr) = do
+runStatement _ (PrintStatement expr) = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     liftIO $ print exprValue
     modify' @StatementLine (+1)
-runStatement (ReadStatement varName) = do
+runStatement _ (ReadStatement varName) = do
     input <- liftIO getLine
     case parse inputParser "input" input of
         Left err    -> liftIO $ putStr $ parseErrorPretty err
@@ -119,7 +125,7 @@ runStatement (ReadStatement varName) = do
   where
     inputParser :: Parsec Void String a
     inputParser = signed space decimal
-runStatement (ForStatement varName fromExpr toExpr body) = do
+runStatement _ (ForStatement varName fromExpr toExpr body) = callCC $ \break -> do
     evalContext <- get'
     fromValue <- myHandle $ runReaderT (eval fromExpr) evalContext
     toValue <- myHandle $ runReaderT (eval toExpr) evalContext
@@ -130,7 +136,9 @@ runStatement (ForStatement varName fromExpr toExpr body) = do
     forM_ [fromValue..toValue] $ \varValue -> do
         myHandle $ updateVariable varName varValue
         put' forLine
-        runProgram body
+        runProgram (break ()) body
+runStatement break BreakStatement = do
+    break
 
-runProgram :: ProgramConstraint a m => Program a -> m ()
-runProgram = mapM_ runStatement
+runProgram :: (ProgramConstraint a m) => m () -> Program a -> m ()
+runProgram = mapM_ . runStatement

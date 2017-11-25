@@ -21,6 +21,7 @@ statementParser =
             <|> try printParser
             <|> try readParser
             <|> try forParser
+            <|> try breakParser
   where
     printParser :: Parser (Statement a)
     printParser = PrintStatement <$> (symbol_ "<" *> exprParser)
@@ -40,6 +41,11 @@ statementParser =
         body <- programParser
         symbol_ "}"
         pure $ ForStatement varName fromExpr toExpr body
+
+    breakParser :: Parser (Statement a)
+    breakParser = do
+        symbol_ "break"
+        pure BreakStatement
 
 programParser :: Integral a => Parser (Program a)
 programParser = sepBy statementParser space
