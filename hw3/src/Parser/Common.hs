@@ -6,14 +6,15 @@ module Parser.Common
     , identifier
     ) where
 
-import           Control.Applicative        (empty, many)
+import           Control.Applicative        (empty)
 import           Control.Monad              (void)
 
-import           Data.ByteString            (ByteString, pack)
+import           Data.ByteString            (ByteString, cons)
+import           Data.Char                  (chr, isAlphaNum)
 import           Data.Void                  (Void)
 
-import           Text.Megaparsec            (Parsec, (<?>))
-import           Text.Megaparsec.Byte       (alphaNumChar, letterChar, space1)
+import           Text.Megaparsec            (Parsec, takeWhileP, (<?>))
+import           Text.Megaparsec.Byte       (letterChar, space1)
 import qualified Text.Megaparsec.Byte.Lexer as L
 
 type Parser = Parsec Void ByteString
@@ -28,5 +29,7 @@ symbol_ :: ByteString -> Parser ()
 symbol_ = void . L.symbol space
 
 identifier :: Parser ByteString
-identifier = lexeme (pack <$> ((:) <$> letterChar <*> many alphaNumChar))
+identifier = lexeme (cons <$> letterChar <*> takeWhileP Nothing isWord8AlphaNum)
         <?> "identifier"
+  where
+    isWord8AlphaNum = isAlphaNum . chr . fromIntegral

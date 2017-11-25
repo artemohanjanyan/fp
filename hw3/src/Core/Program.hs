@@ -11,8 +11,8 @@ module Core.Program
     , ProgramErrorCause (..)
     , ProgramConstraint
     , ProgramMonad (..)
-    , runProgram
-    , runProgramWithInitialCC
+    , executeProgram
+    , executeProgramWithInitialCC
     ) where
 
 import           Prelude                    hiding (break)
@@ -23,7 +23,7 @@ import           Core.Variables             (VariableAssignment (..),
                                              VariableName, declareVariable,
                                              updateVariable)
 
-import           Data.ByteString            (ByteString, append)
+import           Data.ByteString            (ByteString, append, getLine)
 import           Data.Void                  (Void)
 
 import           Control.Monad              (forM_, join, mapM_)
@@ -37,8 +37,8 @@ import           Ether.State                (MonadState, MonadState', StateT', g
                                              modify', put, put')
 
 import           Text.Megaparsec            (Parsec, parse)
-import           Text.Megaparsec.Char       (space)
-import           Text.Megaparsec.Char.Lexer (decimal, signed)
+import           Text.Megaparsec.Byte       (space)
+import           Text.Megaparsec.Byte.Lexer (decimal, signed)
 import           Text.Megaparsec.Error      (parseErrorPretty)
 
 type IntegralConstraint a =
@@ -62,7 +62,9 @@ newtype ProgramMonad a b = ProgramMonad
         (StateT' (EvalContext a)
             (StateT' StatementLine
                 (ExceptT ProgramError
-                    (ContT (Either ProgramError (((), EvalContext a), StatementLine))
+                    (ContT (Either ProgramError
+                                   (((), EvalContext a), StatementLine)
+                           )
                         (ReaderT (ProgramMonad a ())
                             IO
                         )
@@ -131,7 +133,7 @@ myHandle :: ( MonadState' StatementLine m
          => ExceptT e m a -> m a
 myHandle = exceptT handleProgramErrorCause pure
 
-runVariableStatement :: ( Integral a
+executeVariableStatement :: ( Integral a
                         , MonadState' (EvalContext a) m
                         , MonadState' StatementLine m
                         , MonadError ProgramError m
@@ -139,32 +141,34 @@ runVariableStatement :: ( Integral a
                      => VariableAssignment a
                      -> (VariableName -> a -> ExceptT VariableError m ())
                      -> m ()
-runVariableStatement (VariableAssignment varName expr) action = do
+executeVariableStatement (VariableAssignment varName expr) action = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     myHandle $ action varName exprValue
     modify' @StatementLine (+1)
 
-runStatement :: forall a . (IntegralConstraint a) => Statement a -> ProgramMonad a ()
-runStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
-        runVariableStatement statement declareVariable
-runStatement (VariableAssignmentStatement statement) =
-        runVariableStatement statement updateVariable
-runStatement (PrintStatement expr) = do
+executeStatement :: forall a . (IntegralConstraint a)
+                 => Statement a -> ProgramMonad a ()
+executeStatement (VariableDeclarationStatement (VariableDeclaration statement)) =
+        executeVariableStatement statement declareVariable
+executeStatement (VariableAssignmentStatement statement) =
+        executeVariableStatement statement updateVariable
+executeStatement (PrintStatement expr) = do
     evalContext <- get'
     exprValue <- myHandle $ runReaderT (eval expr) evalContext
     liftIO $ print exprValue
     modify' @StatementLine (+1)
-runStatement (ReadStatement varName) = do
-    input <- liftIO getLine
+executeStatement (ReadStatement varName) = do
+    input <- liftIO Data.ByteString.getLine
     case parse inputParser "input" input of
         Left err    -> liftIO $ putStr $ parseErrorPretty err
         Right value -> myHandle $ updateVariable varName value
     modify' @StatementLine (+1)
   where
-    inputParser :: Parsec Void String a
+    inputParser :: Parsec Void ByteString a
     inputParser = signed space decimal
-runStatement (ForStatement varName fromExpr toExpr body) = callCC $ \break -> do
+executeStatement (ForStatement varName fromExpr toExpr body) =
+        callCC $ \break -> do
     evalContext <- get'
     fromValue <- myHandle $ runReaderT (eval fromExpr) evalContext
     toValue <- myHandle $ runReaderT (eval toExpr) evalContext
@@ -175,13 +179,13 @@ runStatement (ForStatement varName fromExpr toExpr body) = callCC $ \break -> do
     local (const $ break ()) $ forM_ [fromValue..toValue] $ \varValue -> do
         myHandle $ updateVariable varName varValue
         put' forLine
-        runProgram body
-runStatement BreakStatement = do
-    join ask
+        executeProgram body
+executeStatement BreakStatement = join ask
 
-runProgram :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
-runProgram = mapM_ runStatement
+executeProgram :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
+executeProgram = mapM_ executeStatement
 
-runProgramWithInitialCC :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
-runProgramWithInitialCC program = callCC $ \break ->
-        local (const $ break ()) $ runProgram program
+executeProgramWithInitialCC :: (IntegralConstraint a)
+                            => Program a -> ProgramMonad a ()
+executeProgramWithInitialCC program = callCC $ \break ->
+        local (const $ break ()) $ executeProgram program

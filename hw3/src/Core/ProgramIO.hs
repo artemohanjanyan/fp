@@ -1,5 +1,5 @@
 module Core.ProgramIO
-    ( runProgramIO
+    ( executeProgramIO
     , Program
     ) where
 
@@ -7,7 +7,7 @@ import           Prelude               hiding (break)
 
 import           Core.Expr             (EvalContext)
 import           Core.Program          (Program, ProgramError (..), ProgramMonad (..),
-                                        StatementLine, runProgramWithInitialCC)
+                                        StatementLine, executeProgramWithInitialCC)
 
 import           Control.Monad.Cont    (runContT)
 import           Control.Monad.Except  (runExceptT)
@@ -16,9 +16,9 @@ import qualified Data.ByteString.Char8 (putStrLn)
 import qualified Data.Map.Strict       as Map
 import           Ether.State           (runStateT')
 
-runProgramIO :: forall a . (Show a, Integral a) => Program a -> IO ()
-runProgramIO program = do
-    let withCC = runProgramMonad $ runProgramWithInitialCC program
+executeProgramIO :: forall a . (Show a, Integral a) => Program a -> IO ()
+executeProgramIO program = do
+    let withCC = runProgramMonad $ executeProgramWithInitialCC program
     let withEvalContext = runStateT' @(EvalContext a) withCC Map.empty
     let withStatementLine = runStateT' @StatementLine withEvalContext 1
     let withExcept = runExceptT withStatementLine

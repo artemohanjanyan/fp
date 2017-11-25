@@ -1,6 +1,6 @@
 module Main (main) where
 
-import           Core.ProgramIO        (runProgramIO)
+import           Core.ProgramIO        (executeProgramIO)
 import           Parser.ProgramParser  (srcParser)
 
 import           System.Environment    (getArgs)
@@ -22,4 +22,4 @@ parseAndRun filePath = do
     fileContents <- Data.ByteString.readFile filePath
     case parse srcParser filePath fileContents of
         Left err      -> putStr $ parseErrorPretty err
-        Right program -> runProgramIO @Int program
+        Right program -> executeProgramIO @Int program
