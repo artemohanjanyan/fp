@@ -7,17 +7,15 @@ module Core.Variables
     , updateVariable
     ) where
 
-import           Core.Expr            (EvalContext, Expr)
+import           Core.Expr            (Expr)
+import           Core.Typesystem      (EvalContext, VariableName)
 
-import           Data.ByteString      (ByteString)
 import qualified Data.Map.Strict      as Map
 
 import           Control.Monad        (when)
 import           Control.Monad.Except (MonadError, throwError)
 
 import           Ether.State          (MonadState', get', put')
-
-type VariableName = ByteString
 
 data VariableAssignment a
     = VariableAssignment VariableName (Expr a)

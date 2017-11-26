@@ -5,7 +5,8 @@ module Core.Expr
     , eval
     ) where
 
-import           Data.ByteString      (ByteString)
+import           Core.Typesystem      (EvalContext, VariableName)
+
 import qualified Data.Map.Strict      as Map
 
 import           Control.Applicative  (liftA2)
@@ -15,12 +16,12 @@ import           Control.Monad.Reader (MonadReader, ask, local)
 
 data Expr a
     = Lit a
-    | Var ByteString
+    | Var VariableName
     | Expr a :+: Expr a
     | Expr a :-: Expr a
     | Expr a :*: Expr a
     | Expr a :/: Expr a
-    | Let ByteString (Expr a) (Expr a)
+    | Let VariableName (Expr a) (Expr a)
     deriving (Show)
 
 infixl 6 :+:
@@ -30,10 +31,8 @@ infixl 7 :/:
 
 data EvalError
     = DivisionByZero
-    | UndefinedVariable ByteString
+    | UndefinedVariable VariableName
     deriving (Show)
-
-type EvalContext a = Map.Map ByteString a
 
 eval :: ( Integral a
         , MonadReader (EvalContext a) m
