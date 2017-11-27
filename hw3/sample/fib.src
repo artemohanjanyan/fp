@@ -3,10 +3,9 @@ mut num = 0
 mut fib0 = 0
 mut fib1 = 1
 mut i = 0
-mut tmp = 0
 for i = 0 to num {
 	< fib0
-	tmp = fib0 + fib1
+	mut tmp = fib0 + fib1
 	fib0 = fib1
 	fib1 = tmp
 }

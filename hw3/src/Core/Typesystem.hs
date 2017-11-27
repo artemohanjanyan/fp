@@ -4,7 +4,7 @@ module Core.Typesystem
     ) where
 
 import           Data.ByteString (ByteString)
-import           Data.Map        (Map)
+import           Data.Map.Strict (Map)
 
 type VariableName = ByteString
 

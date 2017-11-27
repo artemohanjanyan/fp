@@ -24,6 +24,7 @@ import           Core.Variables             (VariableAssignment (..),
                                              updateVariable)
 
 import           Data.ByteString            (ByteString, append, getLine)
+import qualified Data.Map.Strict            as Map
 import           Data.Void                  (Void)
 
 import           Control.Monad              (forM_, join, mapM_)
@@ -34,7 +35,7 @@ import           Control.Monad.Reader       (MonadReader, ReaderT, ask, local, r
 
 import           Control.Error.Util         (exceptT)
 import           Ether.State                (MonadState, MonadState', StateT', get, get',
-                                             modify', put, put')
+                                             gets', modify', put, put')
 
 import           Text.Megaparsec            (Parsec, parse)
 import           Text.Megaparsec.Byte       (space)
@@ -176,11 +177,16 @@ executeStatement (ForStatement varName fromExpr toExpr body) =
     modify' @StatementLine (+1)
     forLine <- get' @StatementLine
 
+    keysSet <- gets' @(EvalContext a) Map.keysSet
+
     local (const $ break ()) $ forM_ [fromValue..toValue] $ \varValue -> do
         myHandle $ updateVariable varName varValue
         put' forLine
         executeProgram body
-executeStatement BreakStatement = join ask
+        modify' @(EvalContext a) (flip Map.restrictKeys keysSet)
+executeStatement BreakStatement = do
+    modify' @StatementLine (+1)
+    join ask
 
 executeProgram :: (IntegralConstraint a) => Program a -> ProgramMonad a ()
 executeProgram = mapM_ executeStatement
