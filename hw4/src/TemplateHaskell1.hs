@@ -9,9 +9,11 @@ import           TemplateHaskell            (choseByIndices)
 import           Language.Haskell.TH        (Exp (TupE), Q, runQ)
 import           Language.Haskell.TH.Syntax (Lift)
 
+import           Control.Monad              (fail)
+
 choseByIndices' :: Lift a => [Int] -> a -> Q Exp
 choseByIndices' indices tuple = do
     parsed <- runQ [| tuple |]
     case parsed of
         TupE elems -> let n = length elems in [| $(choseByIndices n indices) tuple |]
-        _          -> undefined
+        _          -> fail "second argument must be a tuple"
