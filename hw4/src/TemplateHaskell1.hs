@@ -2,9 +2,10 @@
 
 module TemplateHaskell1
     ( choseByIndices'
+    , A (..)
     ) where
 
-import           TemplateHaskell            (choseByIndices)
+import           TemplateHaskell            (choseByIndices, deriveShow)
 
 import           Language.Haskell.TH        (Exp (TupE), Q, runQ)
 import           Language.Haskell.TH.Syntax (Lift)
@@ -17,3 +18,6 @@ choseByIndices' indices tuple = do
     case parsed of
         TupE elems -> let n = length elems in [| $(choseByIndices n indices) tuple |]
         _          -> fail "second argument must be a tuple"
+
+data A = B { getInt :: Int, getD :: Double } | C { getQ :: Bool } | D
+deriveShow ''A
