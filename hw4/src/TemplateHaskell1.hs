@@ -1,11 +1,12 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections      #-}
 
 module TemplateHaskell1
     ( choseByIndices'
     , A (..)
     ) where
 
-import           TemplateHaskell            (choseByIndices, deriveShow)
+import           TemplateHaskell            (choseByIndices, deriveText)
 
 import           Language.Haskell.TH        (Exp (TupE), Q, runQ)
 import           Language.Haskell.TH.Syntax (Lift)
@@ -19,5 +20,8 @@ choseByIndices' indices tuple = do
         TupE elems -> let n = length elems in [| $(choseByIndices n indices) tuple |]
         _          -> fail "second argument must be a tuple"
 
-data A = B { getInt :: Int, getD :: Double } | C { getQ :: Bool } | D
-deriveShow ''A
+data A
+    = B { getInt :: Int, getD :: Double }
+    | C { getQ :: Bool }
+    | D
+deriveText ''A
