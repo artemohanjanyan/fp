@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     TemplateHaskell
                      , TemplateHaskell1
+                     , BaseLens
   default-extensions:  TemplateHaskell
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
