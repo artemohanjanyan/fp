@@ -2,7 +2,25 @@
 {-# LANGUAGE Rank2Types       #-}
 {-# LANGUAGE TemplateHaskell  #-}
 
-module FileSystem where
+module FileSystem
+    ( FS(..)
+    , name
+    , contents
+    , _Dir
+    , _File
+
+    , scanDir
+
+    , cd
+    , ls
+    , file
+
+    , changeExtensions
+    , traverseAll
+    , rm
+
+    , walker
+    ) where
 
 import           Control.Lens           (Traversal', filtered, has, makeLenses,
                                          makePrisms, traversed, (%~), (&), (^.), (^..),
@@ -62,11 +80,13 @@ changeExtensions :: String -> FS -> FS
 changeExtensions newExt fs =
     fs & contents.traversed.filtered (has _File).name %~ (-<.> newExt)
 
+-- Traversal is better than list, (^..traverseAll) gives list
 traverseAll :: Traversal' FS FilePath
 traverseAll argBind obj@(Dir _ _) =
     Dir <$> argBind (obj^.name) <*> traverse (traverseAll argBind) (obj^.contents)
 traverseAll argBind obj@(File _) = File <$> argBind (obj^.name)
 
+-- Meh
 rm :: FilePath -> FS -> FS
 rm _ fs@(File _) = fs
 rm path fs =
@@ -125,7 +145,7 @@ processCmd (CmdCd path) = do
     fs <- ask
     stack <- get
     fsAfterCd <-
-        case fs ^? foldr (flip (.)) id (map (\(dir, _, _) -> cd dir) $ L.init stack) of
+        case fs ^? foldr (flip (.) . (\(dir, _, _) -> cd dir)) id (L.init stack) of
             Just fs' -> pure fs'
             Nothing  -> fail "incorrect stack state"
     case fsAfterCd ^? cd path of

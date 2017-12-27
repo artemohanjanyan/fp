@@ -13,6 +13,7 @@ import           Language.Haskell.TH.Syntax (Lift)
 
 import           Control.Monad              (fail)
 
+-- Not so typesafe, but works
 choseByIndices' :: Lift a => [Int] -> a -> Q Exp
 choseByIndices' indices tuple = do
     parsed <- runQ [| tuple |]

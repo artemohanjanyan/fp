@@ -57,7 +57,7 @@ intSetNub :: [Int] -> [Int]
 intSetNub = S.toList . S.fromList
 
 
-randomList :: Int -> Int -> IO ([Int])
+randomList :: Int -> Int -> IO [Int]
 randomList 0 _   = pure []
 randomList n maxElem = do
   r <- randomRIO (1, maxElem)
@@ -74,34 +74,34 @@ main = do
     let testList = [1,2 .. 100] ++ [1,3 .. 100] ++ [1,5 .. 100]
     in [ bgroup
            "test300"
-           [ bench "intset nub" $ nf intSetNub testList
-           , bench "vec nub" $ nf vecNub testList
-           , bench "manual nub" $ nf manualNub testList
+           [ bench "intset nub"  $ nf intSetNub  testList
+           , bench "vec nub"     $ nf vecNub     testList
+           , bench "manual nub"  $ nf manualNub  testList
            , bench "libsort nub" $ nf libSortNub testList
-           , bench "lib nub" $ nf (nub @Int) testList
+           , bench "lib nub"     $ nf (nub @Int) testList
            ]
        , bgroup
            "random1000"
-           [ bench "intset nub" $ nf intSetNub list1000
-           , bench "vec nub" $ nf vecNub list1000
-           , bench "manual nub" $ nf manualNub list1000
+           [ bench "intset nub"  $ nf intSetNub  list1000
+           , bench "vec nub"     $ nf vecNub     list1000
+           , bench "manual nub"  $ nf manualNub  list1000
            , bench "libsort nub" $ nf libSortNub list1000
-           , bench "lib nub" $ nf (nub @Int) list1000
+           , bench "lib nub"     $ nf (nub @Int) list1000
            ]
        , bgroup
            "random5000"
-           [ bench "intset nub" $ nf intSetNub list5000
-           , bench "vec nub" $ nf vecNub list5000
-           , bench "manual nub" $ nf manualNub list5000
+           [ bench "intset nub"  $ nf intSetNub  list5000
+           , bench "vec nub"     $ nf vecNub     list5000
+           , bench "manual nub"  $ nf manualNub  list5000
            , bench "libsort nub" $ nf libSortNub list5000
-           , bench "lib nub" $ nf (nub @Int) list5000
+           , bench "lib nub"     $ nf (nub @Int) list5000
            ]
        , bgroup
            "random10000"
-           [ bench "intset nub" $ nf intSetNub list10000
-           , bench "vec nub" $ nf vecNub list10000
-           , bench "manual nub" $ nf manualNub list10000
+           [ bench "intset nub"  $ nf intSetNub  list10000
+           , bench "vec nub"     $ nf vecNub     list10000
+           , bench "manual nub"  $ nf manualNub  list10000
            , bench "libsort nub" $ nf libSortNub list10000
-           , bench "lib nub" $ nf (nub @Int) list10000
+           , bench "lib nub"     $ nf (nub @Int) list10000
            ]
        ]

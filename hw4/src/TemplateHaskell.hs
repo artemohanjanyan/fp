@@ -43,6 +43,7 @@ choseByIndices tupleLength indices = do
 class ShowText a where
     showText :: a -> T.Text
 
+-- The only way to implement it as a one-liner is to use Show
 deriveText :: Name -> Q [Dec]
 deriveText name = do
     hasInstanceShow <- isInstance (mkName "Show") [ConT name]
@@ -60,6 +61,7 @@ deriveText name = do
         [d|instance ShowText $(conT name)
             where showText = T.pack . show|]
 
+-- Real deriveText should look something like this
 deriveShow :: Name -> Q [Dec]
 deriveShow typeName = do
     TyConI (DataD _ _ _ _ cons _) <- reify typeName
