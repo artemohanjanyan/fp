@@ -1,14 +1,20 @@
-{-# LANGUAGE Rank2Types      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE Rank2Types       #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module FileSystem where
 
-import           Control.Lens     (Traversal', filtered, has, makeLenses, makePrisms,
-                                   traversed, (%~), (&), (^.), (^..), (^?), _head)
-import           Control.Monad    (forM, unless)
-import           Data.Maybe       (isJust)
-import           System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
-import           System.FilePath  (joinPath, splitDirectories, (-<.>), (</>))
+import           Control.Lens           (Traversal', filtered, has, makeLenses,
+                                         makePrisms, traversed, (%~), (&), (^.), (^..),
+                                         (^?), _head)
+import           Control.Monad          (forM, unless, void)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Monad.Reader   (MonadReader, ReaderT, ask, runReaderT)
+import           Control.Monad.State    (MonadState, StateT, get, gets, put, runStateT)
+import qualified Data.List.NonEmpty     as L
+import           Data.Maybe             (isJust)
+import           System.Directory       (doesDirectoryExist, doesFileExist, listDirectory)
+import           System.FilePath        (joinPath, splitDirectories, (-<.>), (</>))
 
 data FS
     = Dir
@@ -84,5 +90,79 @@ rm path fs =
   where
     path' = splitDirectories path
 
---move :: FilePath -> Traversal' FS FS
---move path argBind fs = (fs ) & name %~ (path </>)
+walker :: FilePath -> IO ()
+walker path = do
+    fs <- scanDir path
+    let (files, dirs) = getStats fs
+    void $ runReaderT (runStateT loop $ (path, files, dirs) L.:| []) fs
+  where
+    loop :: StateT (L.NonEmpty (FilePath, Int, Int)) (ReaderT FS IO) ()
+    loop = do
+        printState
+        cmd <- readCmd
+        case cmd of
+            Just cmd' -> processCmd cmd'
+            Nothing   -> liftIO $ putStrLn "incorrect command"
+        loop
+
+data Cmd = CmdCd FilePath | CmdUp
+
+readCmd :: MonadIO m => m (Maybe Cmd)
+readCmd = do
+    liftIO $ putStr "> "
+    cmd <- liftIO getLine
+    case words cmd of
+        ["cd", path] -> pure $ Just $ CmdCd path
+        ["up"]       -> pure $ Just CmdUp
+        _            -> pure Nothing
+
+processCmd ::
+    ( MonadState (L.NonEmpty (FilePath, Int, Int)) m
+    , MonadReader FS m
+    , MonadIO m
+    ) => Cmd -> m ()
+processCmd (CmdCd path) = do
+    fs <- ask
+    stack <- get
+    fsAfterCd <-
+        case fs ^? foldr (flip (.)) id (map (\(dir, _, _) -> cd dir) $ L.init stack) of
+            Just fs' -> pure fs'
+            Nothing  -> fail "incorrect stack state"
+    case fsAfterCd ^? cd path of
+        Just fs' -> do
+            let (files, dirs) = getStats fs'
+            let (_, stackFiles, stackDirs) = L.head stack
+            put $ (path, stackFiles + files, stackDirs + dirs) L.<| stack
+        Nothing -> liftIO $ putStrLn "no such directory"
+processCmd CmdUp = do
+    stack <- get
+    case L.nonEmpty $ L.tail stack of
+        Nothing     -> liftIO $ putStrLn "can't up from root"
+        Just stack' -> put stack'
+
+printState ::
+    ( MonadState (L.NonEmpty (FilePath, Int, Int)) m
+    , MonadReader FS m
+    , MonadIO m
+    ) => m ()
+printState = do
+    currentDir <- getCurrentDir
+    liftIO $ putStrLn $ "You in " ++ show currentDir
+    (root, _, _) <- gets L.last
+    (_, files, dirs) <- gets L.head
+    liftIO $ putStrLn $ "Files from root  " ++ show root ++ ": " ++ show files
+    liftIO $ putStrLn $ "Directories from " ++ show root ++ ": " ++ show dirs
+
+getCurrentDir ::
+    ( MonadState (L.NonEmpty (FilePath, Int, Int)) m
+    , MonadReader FS m
+    ) => m FilePath
+getCurrentDir = do
+    stack <- get
+    pure $ foldr1 (flip (</>)) $ L.map (\(dir, _, _) -> dir) stack
+
+getStats :: FS -> (Int, Int)
+getStats fs =
+    ( length $ fs^..contents.traversed.filtered (has _File)
+    , length $ fs^..contents.traversed.filtered (has _Dir )
+    )
